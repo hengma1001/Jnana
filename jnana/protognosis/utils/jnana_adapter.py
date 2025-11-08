@@ -238,7 +238,7 @@ class JnanaProtoGnosisAdapter:
         """
         try:
             # Get default model configuration
-            default_config = self.model_manager.get_default_config()
+            default_config = self.model_manager.get_model_for_agent('default')
             
             # Create default LLM config
             default_llm_config = LLMConfig(

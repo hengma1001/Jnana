@@ -9,6 +9,7 @@ import json
 import requests
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any, Union, Tuple
+from .inference_auth_token import get_access_token
 
 import logging
 
@@ -375,6 +376,52 @@ class OpenAILLM(LLMInterface):
             return parsed_response, prompt_tokens, completion_tokens
         except Exception as e:
             raise ValueError(f"Failed to parse JSON response: {e}. Response was: {response.choices[0].message.content}")
+        
+
+class alcfLLM(OpenAILLM):
+    """Implementation for OpenAI's API."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "openai/gpt-oss-120b", model_adapter: Optional[Dict] = None):
+        """
+        Initialize the OpenAI LLM interface.
+
+        Args:
+            api_key: OpenAI API key (defaults to OPENAI_API_KEY env variable)
+            model: Model identifier to use
+            model_adapter: Optional configuration for model adaptation
+        """
+        super().__init__()
+        self.model = model
+        self.model_adapter = model_adapter
+        if api_key is None:
+            api_key = get_access_token()
+
+        self.client = openai.OpenAI(
+                api_key=api_key,
+                base_url="https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1",
+            )
+
+
+class vllmLLM(OpenAILLM):
+    """Implementation for OpenAI's API."""
+
+    def __init__(self, api_key: Optional[str] = None, model: str = "openai/gpt-oss-120b", model_adapter: Optional[Dict] = None):
+        """
+        Initialize the OpenAI LLM interface.
+
+        Args:
+            api_key: OpenAI API key (defaults to OPENAI_API_KEY env variable)
+            model: Model identifier to use
+            model_adapter: Optional configuration for model adaptation
+        """
+        super().__init__()
+        self.model = model
+        self.model_adapter = model_adapter
+
+        if api_key is None:
+            api_key = 'EMPTY'
+        
+        self.client = openai.OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
 
 
 class OllamaLLM(LLMInterface):
@@ -735,6 +782,7 @@ def create_llm(provider: str, api_key: Optional[str] = None, model: Optional[str
         An instance of the appropriate LLM interface
     """
     provider = provider.lower()
+    print(f"Creating LLM interface for provider: {provider}")
 
     # Create the base LLM interface
     llm = None
@@ -765,6 +813,14 @@ def create_llm(provider: str, api_key: Optional[str] = None, model: Optional[str
     elif provider == "cerebras":
         model = model or "cerebras_api_keyllama-4-scout-17b-16e-instruct"
         llm = CerebrasLLM(api_key=api_key, model=model, model_adapter=model_adapter)
+    elif provider == "alcf":
+        model = model or "openai/gpt-oss-120b"
+        # base_url = base_url or "https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1"
+        llm = alcfLLM(model=model, model_adapter=model_adapter)
+    elif provider == "vllm":
+        model = model or "openai/gpt-oss-120b"
+        # base_url = base_url or "http://localhost:8000/v1"
+        llm = vllmLLM(model=model, model_adapter=model_adapter)
     else:
         raise ValueError(f"Unsupported LLM provider: {provider}")
     

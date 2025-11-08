@@ -33,6 +33,10 @@ class LLMConfig:
                 self.model = "default"
             elif self.provider == "cerebras":
                 self.model = "cerebras_api_keyllama-4-scout-17b-16e-instruct"
+            elif self.provider == "alcf":
+                self.model = "openai/gpt-oss-120b"
+            elif self.provider == "vllm":
+                self.model = "openai/gpt-oss-120b"
 
 @dataclass
 class AgentLLMConfig:
