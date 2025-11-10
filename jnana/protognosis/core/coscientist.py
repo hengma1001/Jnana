@@ -366,7 +366,9 @@ class CoScientist:
             # Validate strategies
             for strategy in strategies:
                 if strategy not in all_strategies:
-                    raise ValueError(f"Unknown strategy: {strategy}")
+                    logging.warning(f"Unknown strategy: {strategy}")
+                    break
+            strategies = all_strategies
         else:
             strategies = all_strategies
 

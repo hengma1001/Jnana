@@ -905,7 +905,7 @@ class SupervisorAgent:
 
         try:
             # Generate the research plan
-            config = self.llm.generate_with_json_output(prompt, schema)
+            config = self.llm.generate_with_json_output(prompt, schema)[0]
             
             # Add the original research goal to the config
             config["original_research_goal"] = research_goal
