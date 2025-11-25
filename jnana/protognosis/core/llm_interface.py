@@ -433,7 +433,7 @@ class alcfLLM(LLMInterface):
         full_prompt = f"{prompt}\n\n{schema_prompt}"
         system = system_prompt or "You output only valid JSON according to the specified schema."
 
-        messages = [{"role": "system", "content": system}]
+        messages = [{"role": "system", "content": system,}]
         messages.append({"role": "user", "content": full_prompt})
 
         response = self.client.chat.completions.create(
@@ -441,8 +441,19 @@ class alcfLLM(LLMInterface):
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
         )
+        while response.choices[0].message.content is None:
+            if response.choices[0].message.reasoning_content is not None:
+                messages.append({"role": "assistant", "content": response.choices[0].message.reasoning_content})
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                response_format={"type": "json_object"},
+            )
+
 
         # Extract JSON string and parse
         import json
