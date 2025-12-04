@@ -391,13 +391,19 @@ class alcfLLM(LLMInterface):
             model_adapter: Optional configuration for model adaptation
         """
         super().__init__(model, model_adapter)
-        self.model = model
+        if 'metis' in model:
+            base_url = "https://inference-api.alcf.anl.gov/resource_server/metis/api/v1"
+            self.model = model.replace('metis/', '')
+        else:
+            base_url = "https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1"
+            self.model = model
+        
         self.model_adapter = model_adapter
         api_key = get_access_token()
 
         self.client = openai.OpenAI(
                 api_key=api_key,
-                base_url="https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1",
+                base_url=base_url,
             )
        
     def generate(self, prompt: str, system_prompt: Optional[str] = None,
@@ -443,6 +449,7 @@ class alcfLLM(LLMInterface):
             max_tokens=max_tokens,
             response_format={"type": "json_object"},
         )
+        print(messages, response)
         while response.choices[0].message.content is None:
             if response.choices[0].message.reasoning_content is not None:
                 messages.append({"role": "assistant", "content": response.choices[0].message.reasoning_content})
