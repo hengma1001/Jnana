@@ -449,7 +449,7 @@ class alcfLLM(LLMInterface):
             max_tokens=max_tokens,
             response_format={"type": "json_object"},
         )
-        print(messages, response)
+
         while response.choices[0].message.content is None:
             if response.choices[0].message.reasoning_content is not None:
                 messages.append({"role": "assistant", "content": response.choices[0].message.reasoning_content})
