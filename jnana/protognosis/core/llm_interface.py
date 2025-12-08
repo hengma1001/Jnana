@@ -429,6 +429,7 @@ class alcfLLM(LLMInterface):
                                  system_prompt: Optional[str] = None,
                                  temperature: float = 0.7, max_tokens: int = 1024) -> Tuple[Dict, int, int]:
         """Generate a structured JSON response from OpenAI."""
+        import json
         schema_prompt = f"""
         Your response must be formatted as a JSON object according to this schema:
         {json_schema}
@@ -452,7 +453,18 @@ class alcfLLM(LLMInterface):
 
         while response.choices[0].message.content is None:
             if response.choices[0].message.reasoning_content is not None:
-                messages.append({"role": "assistant", "content": response.choices[0].message.reasoning_content})
+                try: 
+                    parsed_response = json.loads(response.choices[0].message.reasoning_content)
+                    prompt_tokens = response.usage.prompt_tokens
+                    completion_tokens = response.usage.completion_tokens
+
+                    self.total_calls += 1
+                    self.total_prompt_tokens += prompt_tokens
+                    self.total_completion_tokens += completion_tokens
+
+                    return parsed_response, prompt_tokens, completion_tokens
+                except Exception as e:
+                    messages.append({"role": "assistant", "content": response.choices[0].message.reasoning_content})
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -463,7 +475,7 @@ class alcfLLM(LLMInterface):
 
 
         # Extract JSON string and parse
-        import json
+        
         try:
             content = response.choices[0].message.content
             parsed_response = json.loads(content)
